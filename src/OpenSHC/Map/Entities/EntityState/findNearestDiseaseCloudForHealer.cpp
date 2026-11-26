@@ -28,69 +28,68 @@ namespace Map {
         {
             int nearestEntityIndex = 0;
             int minDistance = 10000;
-            
-            // Using int for iterator to match ebx loop counter
-            int i = 1; 
 
-            unsigned short unitArea = (unsigned short)DAT_TileMapState::instance.PathConnectionLayer[DAT_UnitsState::instance.units[unitID].tile];
+            int unitArea
+                = (int)(short)
+                      DAT_TileMapState::instance.PathConnectionLayer[DAT_UnitsState::instance.units[unitID].tile];
 
-            if (i < this->maxEntityCount) {
-                do {
-                    Entity& entity = this->entityArray[i];
+            for (int i = 1; i < this->maxEntityCount; ++i) {
+                Entity& entity = this->entityArray[i];
 
-                    if (entity.logicalState != 2) goto LAB_0040184d;
-                    if (entity.entityType != Map::Entities::ET_COW_POISON_CLOUD) goto LAB_0040184d;
-                    if (entity.unknownAnimationFrameRelated >= 1001) goto LAB_0040184d;
-                    if (entity.unknownDistanceRelatedValue != 0) goto LAB_0040184d;
+                if (entity.logicalState != 2)
+                    continue;
+                if (entity.entityType != Map::Entities::ET_COW_POISON_CLOUD)
+                    continue;
+                if (entity.unknownAnimationFrameRelated > 1000)
+                    continue;
+                if (entity.unknownDistanceRelatedValue != 0)
+                    continue;
 
-                    short healerUnitID = entity.unitID_healer;
-                    if (healerUnitID != 0) {
-                        if (entity.unitUID == DAT_UnitsState::instance.units[healerUnitID].uid) {
-                            UnitStateShort unitState = DAT_UnitsState::instance.units[healerUnitID].state.generic;
-                            if (unitState == Map::Units::States::US_AIM_WEAPONUnk || unitState == Map::Units::States::US_FIRE_WEAPONUnk) {
-                                goto LAB_0040184d;
-                            }
-                        }
-                        entity.unitID_healer = 0;
-                    }
-
-                    unsigned short entityArea = (unsigned short)DAT_TileMapState::instance.PathConnectionLayer[entity.tile];
-                    
-                    if (entityArea != unitArea) {
-                        int canNavigate = MACRO_CALL_MEMBER(Map::Navigation::PathFindingState_Func::calculateCanPlayerUnitsNavigateToAreaFromArea, 
-                                            DAT_PathFindingState::ptr)((int)DAT_UnitsState::instance.units[unitID].owner, 
-                                            (unsigned int)unitArea, (unsigned int)entityArea, 0);
-                        if (canNavigate == 0) goto LAB_0040184d;
-                    }
-
-                    if (DAT_GameSynchronyState::instance.currentGameMode != Game::GM_SOLITARY) {
-                        int workplaceID = DAT_UnitsState::instance.units[unitID].workplaceBuildingID_1;
-                        if (workplaceID != 0) {
-                            MACRO_CALL_MEMBER(Map::Navigation::DirectionAlgorithmState_Func::setAxisBasedDistanceResult, 
-                                            DAT_DirectionAlgorithmState::ptr)(
-                                            (int)DAT_BuildingsState::instance.buildings[workplaceID].x,
-                                            (int)DAT_BuildingsState::instance.buildings[workplaceID].y,
-                                            (int)entity.xPosition,
-                                            (int)entity.yPosition);
-                            if (DAT_DirectionAlgorithmState::instance.distanceHigh >= 31) goto LAB_0040184d;
+                short healerUnitID = entity.unitID_healer;
+                if (healerUnitID != 0) {
+                    if (entity.unitUID == DAT_UnitsState::instance.units[healerUnitID].uid) {
+                        UnitStateShort unitState = DAT_UnitsState::instance.units[healerUnitID].state.generic;
+                        if (unitState == Map::Units::States::US_AIM_WEAPONUnk
+                            || unitState == Map::Units::States::US_FIRE_WEAPONUnk) {
+                            continue;
                         }
                     }
+                    entity.unitID_healer = 0;
+                }
 
-                    MACRO_CALL_MEMBER(Map::Navigation::DirectionAlgorithmState_Func::setAxisBasedDistanceResult, 
+                int entityArea = (int)(short)DAT_TileMapState::instance.PathConnectionLayer[entity.tile];
+
+                if (entityArea != unitArea) {
+                    int canNavigate = MACRO_CALL_MEMBER(
+                        Map::Navigation::PathFindingState_Func::calculateCanPlayerUnitsNavigateToAreaFromArea,
+                        DAT_PathFindingState::ptr)((int)(short)DAT_UnitsState::instance.units[unitID].owner,
+                        (unsigned int)unitArea, (unsigned int)entityArea, 0);
+                    if (canNavigate == 0)
+                        continue;
+                }
+
+                if (DAT_GameSynchronyState::instance.currentGameMode != Game::GM_SOLITARY) {
+                    int workplaceID = DAT_UnitsState::instance.units[unitID].workplaceBuildingID_1;
+                    if (workplaceID != 0) {
+                        MACRO_CALL_MEMBER(Map::Navigation::DirectionAlgorithmState_Func::setAxisBasedDistanceResult,
                             DAT_DirectionAlgorithmState::ptr)(
-                            (int)DAT_UnitsState::instance.units[unitID].x,
-                            (int)DAT_UnitsState::instance.units[unitID].y,
-                            (int)entity.xPosition,
-                            (int)entity.yPosition);
-                    
-                    if (DAT_DirectionAlgorithmState::instance.distanceHigh < minDistance) {
-                        minDistance = DAT_DirectionAlgorithmState::instance.distanceHigh;
-                        nearestEntityIndex = i;
+                            (int)(short)DAT_BuildingsState::instance.buildings[workplaceID].x,
+                            (int)(short)DAT_BuildingsState::instance.buildings[workplaceID].y,
+                            (int)(short)entity.xPosition, (int)(short)entity.yPosition);
+                        if (DAT_DirectionAlgorithmState::instance.distanceHigh > 30)
+                            continue;
                     }
+                }
 
-                LAB_0040184d:
-                    i++;
-                } while (i < this->maxEntityCount);
+                MACRO_CALL_MEMBER(Map::Navigation::DirectionAlgorithmState_Func::setAxisBasedDistanceResult,
+                    DAT_DirectionAlgorithmState::ptr)((int)(short)DAT_UnitsState::instance.units[unitID].x,
+                    (int)(short)DAT_UnitsState::instance.units[unitID].y, (int)(short)entity.xPosition,
+                    (int)(short)entity.yPosition);
+
+                if (DAT_DirectionAlgorithmState::instance.distanceHigh < minDistance) {
+                    nearestEntityIndex = i;
+                    minDistance = DAT_DirectionAlgorithmState::instance.distanceHigh;
+                }
             }
             return nearestEntityIndex;
         }
